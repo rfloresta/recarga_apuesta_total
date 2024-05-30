@@ -1,21 +1,21 @@
 <?php
 
-// Importar los controladores necesarios
-require_once 'controllers/RecargasController.php';
+// Importar las clases necesarias
+use App\Controllers\RecargasController;
 
 // Definir las rutas
 $routes = [
     'GET' => [
-        '/recargas' => 'RecargasController@index',
-        '/recargas/{id}' => 'RecargasController@find',
-        '/historial/{player_id}' => 'RecargasController@showHistorial',
+        '/recargas' => [RecargasController::class, 'index'],
+        '/recargas/{id}' => [RecargasController::class, 'find'],
+        '/historial/{player_id}' => [RecargasController::class, 'showHistorial'],
     ],
     'POST' => [
-        '/recargas' => 'RecargasController@store',
+        '/recargas' => [RecargasController::class, 'store'],
     ],
     'PUT' => [
-        '/recargas/{id}' => 'RecargasController@update',
-    ]
+        '/recargas/{id}' => [RecargasController::class, 'update'],
+    ],
 ];
 
 return $routes;
