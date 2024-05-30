@@ -1,161 +1,186 @@
+DROP DATABASE apuesta_total;
+
 -- Crear la base de datos
 CREATE DATABASE IF NOT EXISTS apuesta_total;
 
 -- Utilizar la base de datos recién creada
 USE apuesta_total;
 
+DROP table auditoria_logs;
 CREATE TABLE clientes(
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     player_id VARCHAR(50) NOT NULL,
-    nombre VARCHAR(100) NOT NULL,
+    nombres VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     saldo DECIMAL(10, 2) DEFAULT 0,
-    INDEX(id)
+    INDEX idx_player_id (player_id),
+    INDEX idx_nombres_d (nombres),
+    INDEX idx_apellidos_id (apellido)
 );
 
 -- Tabla de roles
 CREATE TABLE roles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SMALLINT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     estado ENUM('activo', 'inactivo') NOT NULL DEFAULT 'activo'
-    INDEX(id)
 );
 
 -- Tabla de usuarios (usuarios)
 CREATE TABLE usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     nombre_usuario VARCHAR(100) NOT NULL,
     contrasena VARCHAR(100) NOT NULL,
-    rol_id INT,
+    rol_id SMALLINT,
     FOREIGN KEY (rol_id) REFERENCES roles(id)
 );
 
 -- Tabla de canal de comunicación
 CREATE TABLE canales_comunicacion (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SMALLINT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL
-    INDEX(id)
 );
 
 -- Tabla de bancos
 CREATE TABLE bancos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SMALLINT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     estado ENUM('activo', 'inactivo') NOT NULL DEFAULT 'activo'
-    INDEX(id)
 );
 
 
 CREATE TABLE recargas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     monto DECIMAL(10, 2) NOT NULL,
     fecha_hora DATETIME NOT NULL,
     foto_voucher BLOB,
-    client_id INT,
-    banco_id INT,
-    canal_id INT,
+    cliente_id BIGINT,
+    usuario_id BIGINT,
+    banco_id SMALLINT,
+    canal_id SMALLINT,
     FOREIGN KEY (cliente_id) REFERENCES clientes(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
     FOREIGN KEY (banco_id) REFERENCES bancos(id),
-    FOREIGN KEY (canal_id) REFERENCES canales_comunicacion (id),
-    INDEX(cliente_id),
-    INDEX(banco_id),
-    INDEX(canal_id)
+    FOREIGN KEY (canal_id) REFERENCES canales_comunicacion(id),
+    INDEX idx_cliente_id(cliente_id),
+    INDEX idx_usuario_id(usuario_id)
 );
 
+CREATE TABLE auditoria_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tabla_afectada VARCHAR(100) NOT NULL,
+    operacion VARCHAR(10) NOT NULL,
+    fecha_hora DATETIME NOT NULL,
+    usuario_id BIGINT, -- El usuario que realizó la operación
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
 
-DELIMITER //
+DROP PROCEDURE RealizarRecarga
+
+delimiter  //
 
 CREATE PROCEDURE RealizarRecarga(
-    IN p_ClienteID INT,
+    IN p_UsuarioID BIGINT,
+    IN p_ClienteID BIGINT,
     IN p_Monto DECIMAL(10, 2),
-    IN p_banco_id INT,
-    IN p_canal_id INT,
-    IN p_foto_voucher BLOB
+    IN p_BancoID SMALLINT,
+    IN p_CanalID SMALLINT,
+    IN p_FotoVoucher BLOB
 )
 BEGIN
     -- Verificar que el nuevo monto no sea menor que cero
-    IF p_monto <= 0 THEN
-        SELECT 'El monto de la recarga debe ser mayor a cero.' AS mensaje;
-        LEAVE;
-    END IF;
-
-    INSERT INTO recargas (monto, fecha_hora, foto_voucher, client_id, banco_id, canal_id)
-    VALUES (p_monto, NOW(), p_foto_voucher,  p_cliente_id, p_banco_id, p_canal_id);
+   IF p_Monto <= 0 THEN
+        SELECT 'El monto de la recarga debe ser mayor a cero.' AS mensaje, -1 AS code;
+   ELSE
+    -- Realizar la recarga
+    INSERT INTO recargas (monto, fecha_hora, foto_voucher, cliente_id, usuario_id, banco_id, canal_id)
+    VALUES (p_Monto, NOW(), p_FotoVoucher,  p_ClienteID, p_UsuarioID, p_BancoID, p_CanalID);
+    
+    -- Registrar la operación en el log de auditoría
+    INSERT INTO auditoria_logs (tabla_afectada, operacion, fecha_hora, usuario_id)
+    VALUES ('recargas', 'INSERT', NOW(), p_UsuarioID);
     
     -- Actualizar el saldo del cliente
-    UPDATE clientes SET saldo = saldo + p_monto WHERE id =  p_cliente_id;
+    UPDATE clientes SET saldo = saldo + p_Monto WHERE id =  p_ClienteID;
+    
+    SELECT 'El monto de la recarga debe ser mayor a cero.' AS mensaje, -1 AS code;
+    
+    SELECT 'Recarga realizada exitosamente.' AS mensaje, 1 AS code;
+   END IF;
 END //
 
-DELIMITER ;
+delimiter  ;
+
+
 
 DELIMITER //
 
 CREATE PROCEDURE ActualizarRecarga(
-    IN p_RecargaID INT,
-    IN p_NuevoMonto DECIMAL(10, 2),
-    IN p_NuevoBancoID INT,
-    IN p_NuevoCanalID INT,
-    IN p_NuevaFotoVoucher BLOB
+	IN p_RecargaID BIGINT,
+   IN p_UsuarioID BIGINT,
+   IN p_NuevoMonto DECIMAL(10, 2),
+   IN p_NuevoBancoID SMALLINT,
+   IN p_NuevoCanalID SMALLINT,
+   IN p_NuevaFotoVoucher BLOB
 )
 BEGIN
-    DECLARE v_SaldoActual DECIMAL(10, 2);
-    DECLARE v_Diferencia DECIMAL(10, 2);
-    DECLARE v_RecargaExiste INT;
-    DECLARE v_ClienteID INT;
+	DECLARE v_SaldoActual DECIMAL(10, 2);
+	DECLARE v_Diferencia DECIMAL(10, 2);
+   DECLARE v_RecargaExiste INT;
+   DECLARE v_ClienteID BIGINT;
 
-    -- Verificar que el nuevo monto sea mayor que cero
-    IF p_NuevoMonto <= 0 THEN
-        SELECT 'El nuevo monto de la recarga debe ser mayor a cero.' AS mensaje;
-        LEAVE;
-    END IF;
-
-    -- Verificar si la recarga existe
-    SELECT COUNT(*) INTO v_RecargaExiste FROM recargas WHERE id = p_RecargaID;
-    
-    IF v_RecargaExiste = 0 THEN
-        SELECT 'La recarga especificada no existe.' AS mensaje;
-        LEAVE;
-    END IF;
-
-    -- Obtener el cliente_id de la recarga
-    SELECT cliente_id into v_ClienteID FROM recargas WHERE id = p_RecargaID
-
-    -- Obtener el saldo actual del cliente
-    SELECT saldo INTO v_SaldoActual FROM clientes WHERE id = v_ClienteID;
-
-    -- Calcular la diferencia entre el nuevo monto y el monto original
-    SELECT p_NuevoMonto - monto INTO v_Diferencia FROM recargas WHERE id = p_RecargaID;
-    
-    -- Actualizar los detalles de la recarga
-    UPDATE recargas 
-    SET banco_id = p_NuevoBancoID,
-        canal_id = p_NuevoCanalID,
-        foto_voucher = p_NuevaFotoVoucher
-    WHERE id = p_RecargaID;
-
-    -- Validar que el saldo actual del cliente sea suficiente para cubrir la diferencia
-    IF v_SaldoActual >= ABS(v_Diferencia) THEN        
-        -- Actualizar el monto de la recarga
-        UPDATE recargas 
-        SET monto = p_NuevoMonto,
-        WHERE id = p_RecargaID;
-        
-        -- Actualizar el saldo del cliente teniendo en cuenta la diferencia
-        IF v_Diferencia > 0 THEN
-            -- Si el nuevo monto es mayor que el monto original, sumar la diferencia al saldo actual
-            UPDATE clientes 
-            SET saldo = v_SaldoActual + v_Diferencia
-            WHERE id = v_ClienteID;
-        ELSE
-            -- Si el nuevo monto es menor o igual que el monto original, restar la diferencia al saldo actual
-            UPDATE clientes 
-            SET saldo = v_SaldoActual - ABS(v_Diferencia)
-            WHERE id = v_ClienteID;
-        END IF;    
-    END IF;
-    
-    SELECT 'Recarga actualizada exitosamente.' AS mensaje;
-
+   -- Verificar que el nuevo monto sea mayor que cero
+   IF p_NuevoMonto <= 0 THEN
+      SELECT 'El nuevo monto de la recarga debe ser mayor a cero.' AS mensaje, -1 AS CODE;
+   ELSE
+	   -- Verificar si la recarga existe
+	   SELECT COUNT(*) INTO v_RecargaExiste FROM recargas WHERE id = p_RecargaID;
+	    
+	   IF v_RecargaExiste = 0 THEN
+	      SELECT 'La recarga especificada no existe.' AS mensaje, -1 AS code;
+	   ELSE
+		   -- Obtener el cliente_id de la recarga
+		   SELECT cliente_id into v_ClienteID FROM recargas WHERE id = p_RecargaID;
+		
+		   -- Obtener el saldo actual del cliente
+		   SELECT saldo INTO v_SaldoActual FROM clientes WHERE id = v_ClienteID;
+		
+		   -- Calcular la diferencia entre el nuevo monto y el monto original
+		   SELECT p_NuevoMonto - monto INTO v_Diferencia FROM recargas WHERE id = p_RecargaID;
+		    
+		   -- Actualizar los detalles de la recarga
+		   UPDATE recargas 
+		   SET banco_id = p_NuevoBancoID,
+		       canal_id = p_NuevoCanalID,
+		       foto_voucher = p_NuevaFotoVoucher
+		   WHERE id = p_RecargaID;
+		    
+		   -- Validar que el saldo actual del cliente sea suficiente para cubrir la diferencia
+		   IF v_SaldoActual >= ABS(v_Diferencia) THEN        
+		      -- Actualizar el monto de la recarga
+		      UPDATE recargas 
+		      SET monto = p_NuevoMonto
+		      WHERE id = p_RecargaID;
+		        
+		      -- Actualizar el saldo del cliente teniendo en cuenta la diferencia
+		      IF v_Diferencia > 0 THEN
+		         -- Si el nuevo monto es mayor que el monto original, sumar la diferencia al saldo actual
+		         UPDATE clientes 
+		         SET saldo = v_SaldoActual + v_Diferencia
+		            WHERE id = v_ClienteID;
+		      ELSE
+		         -- Si el nuevo monto es menor o igual que el monto original, restar la diferencia al saldo actual
+		         UPDATE clientes 
+		         SET saldo = v_SaldoActual - ABS(v_Diferencia)
+		         WHERE id = v_ClienteID;
+		      END IF;    
+		   END IF;    
+		    
+		  	INSERT INTO auditoria_logs (tabla_afectada, operacion, fecha_hora, usuario_id)
+		   VALUES ('recargas', 'UPDATE', NOW(), p_UsuarioID);
+		   
+		   SELECT 'Recarga actualizada exitosamente.' AS mensaje, 1 AS code;
+		END IF;	   
+	END IF;
 END //
 
 DELIMITER ;
@@ -168,7 +193,7 @@ CREATE PROCEDURE ConsultarRecargasPorPlayerID(
 )
 BEGIN
     -- Variable para almacenar el ID del cliente
-    DECLARE v_ClienteID INT;
+    DECLARE v_ClienteID BIGINT;
 
     -- Obtener el ID del cliente por el PlayerID
     SELECT id INTO v_ClienteID FROM clientes WHERE player_id = p_PlayerID;
@@ -183,7 +208,7 @@ BEGIN
         WHERE r.cliente_id = v_ClienteID;
     ELSE
         -- Si no se encontró el cliente, emitir un mensaje de error
-        SELECT 'No se encontró un cliente con el PlayerID proporcionado.' AS mensaje;
+        SELECT 'No se encontró un cliente con el player id proporcionado.' AS mensaje, -1 AS code;
     END IF;
 END //
 

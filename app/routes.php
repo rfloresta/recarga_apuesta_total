@@ -1,19 +1,22 @@
 <?php
 
-use App\Controllers\RecargasController;
+use App\Controllers\RecargaController;
+use Bramus\Router\Router;
 
-// Definir las rutas
-$routes = [
-    'GET' => [
-        '/recargas/{id}' => [RecargasController::class, 'find'],
-        '/historial/{player_id}' => [RecargasController::class, 'showHistorial'],
-    ],
-    'POST' => [
-        '/recargas' => [RecargasController::class, 'store'],
-    ],
-    'PUT' => [
-        '/recargas/{id}' => [RecargasController::class, 'update'],
-    ],
-];
+$router = new Router();
 
-return $routes;
+$recargaController = new RecargaController();
+
+$router->get('/recargas/(\d+)', function ($player_id) use ($recargaController) {
+    $recargaController->getHistorial($player_id);
+});
+
+$router->post('/recargas', function () use ($recargaController) {
+    $recargaController->store();
+});
+
+$router->put('/recargas/(\d+)', function ($id) use ($recargaController) {
+    $recargaController->update($id);
+});
+
+$router->run();
