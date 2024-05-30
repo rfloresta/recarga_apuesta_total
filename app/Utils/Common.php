@@ -3,6 +3,7 @@
 namespace App\Utils;
 
 use stdClass;
+use Exception;
 
 class Common {
     /**
@@ -30,24 +31,6 @@ class Common {
             return $code;
         } else {
             return 500;
-        }
-    }
-
-    /**
-    * Crea la respuesta de los servicios.
-    *
-    * @param array $data Los datos a ser codificados como JSON.
-    * @param int $status El código de estado HTTP de la respuesta.
-    * @return void
-    */
-    public static function response(stdClass $data, int $status): void {
-        http_response_code($status);
-        $json = json_encode($data);
-        if ($json === false) {
-            // Si la codificación JSON falla, retorna un mensaje de error
-            echo json_encode(array('error' => 'Error en la codificación JSON'));
-        } else {
-            echo $json;
         }
     }
 

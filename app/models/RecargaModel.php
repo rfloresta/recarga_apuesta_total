@@ -25,13 +25,14 @@ class RecargaModel {
         return $results;
     }
 
-    public function create( $clienteId, $monto, $bancoId, $canalId, $fotoVoucher ) {
-        $stmt = $this->db->prepare( 'CALL RealizarRecarga(?, ?, ?, ?, ?)' );
-        $stmt->bindParam( 1, $clienteId, PDO::PARAM_INT );
-        $stmt->bindParam( 2, $monto, PDO::PARAM_STR );
-        $stmt->bindParam( 3, $bancoId, PDO::PARAM_INT );
-        $stmt->bindParam( 4, $canalId, PDO::PARAM_INT );
-        $stmt->bindParam( 5, $fotoVoucher, PDO::PARAM_LOB );
+    public function create($usuarioId, $playerId, $monto, $bancoId, $canalId, $fotoVoucher ) {
+        $stmt = $this->db->prepare( 'CALL RealizarRecarga(?, ?, ?, ?, ?, ?)' );
+        $stmt->bindParam( 1, $usuarioId, PDO::PARAM_INT );
+        $stmt->bindParam( 2, $playerId, PDO::PARAM_INT );
+        $stmt->bindParam( 3, $monto, PDO::PARAM_STR );
+        $stmt->bindParam( 4, $bancoId, PDO::PARAM_INT );
+        $stmt->bindParam( 5, $canalId, PDO::PARAM_INT );
+        $stmt->bindParam( 6, $fotoVoucher, PDO::PARAM_STR );
 
         $stmt->execute();
 
