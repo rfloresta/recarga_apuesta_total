@@ -1,10 +1,26 @@
 <?php
+namespace App;
 
-// Cargar el archivo de configuración de la base de datos
-require_once 'config/database.php';
+// Importar las clases necesarias
+use App\Config\EnvironmentLoader;
+use App\Config\Database;
 
 // Cargar las rutas
 $routes = require_once 'app/routes.php';
+
+// Cargar las variables de entorno
+$environment = EnvironmentLoader::load(__DIR__ . '/.env');
+
+// Instanciar la clase Database con la configuración de la base de datos
+$database = new Database(
+    $environment->get('DB_HOST'),
+    $environment->get('DB_NAME'),
+    $environment->get('DB_USER'),
+    $environment->get('DB_PASS')
+);
+
+// Obtener la conexión a la base de datos
+$conn = $database->getConnection();
 
 // Obtener la solicitud HTTP
 $request_method = $_SERVER['REQUEST_METHOD'];
