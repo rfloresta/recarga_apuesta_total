@@ -46,11 +46,11 @@ class Common {
             throw new Exception('La respuesta de la base de datos está vacía', 400);
         } else {
             foreach ($result as $row) {
-                if (isset($row['code']) && intval($row['code']) < 0) {
+                if (isset($row['msg_code']) && intval($row['msg_code']) < 0) {
                     $error = 'Error SQL';
 
-                    if (isset($row['mensaje'])) {
-                        $error = $row['mensaje'];
+                    if (isset($row['msg_info'])) {
+                        $error = $row['msg_info'];
                     }
                     throw new Exception($error, 400);
                 }

@@ -14,7 +14,7 @@ class RecargaController extends Controller{
         $this->recargaModel = new RecargaModel();
     }
 
-    public function getHistorial($player_id) {
+    public function getHistorial(int $player_id) {
         $responseObj =  Common::buildObjResponse();
 
         try {
@@ -51,13 +51,9 @@ class RecargaController extends Controller{
             
             $requiredFields = [ 'usuario_id', 'player_id', 'monto', 'banco_id', 'canal_id', 'foto_voucher'];
         
-            
-
             foreach ($requiredFields as $field) {
                 if (!isset($data[$field])) {
-                    http_response_code(400);
-                    echo json_encode(array("message" => "Todos los campos son requeridos."));
-                    return;
+                    throw new Exception("Todos los campos son requeridos.", 400);
                 }
             }
     
@@ -72,8 +68,8 @@ class RecargaController extends Controller{
 
             Common::handleDatabaseQueryErrors($result);
 
-            $responseObj->message = $result[0]['mensaje'];
-            $responseObj->code = $result[0]['code'];
+            $responseObj->message = $result['msg_info'];
+            $responseObj->code = $result['msg_code'];
             $responseObj->success = TRUE;
 
             $status = 201;
@@ -87,34 +83,35 @@ class RecargaController extends Controller{
         $this->response($responseObj, $status);
     }
 
-    public function update($id, $requestData) {
+    public function update($id) {
         $responseObj =  Common::buildObjResponse();
 
         try {
-            $requiredFields = [ 'id', 'usuario_id', 'player_id', 'monto', 'banco_id', 'canal_id', 'foto_voucher'];
+
+            // Obtener el JSON del cuerpo de la solicitud
+            $data = $this->decodeJsonBody();
+            $data['id'] = $id;
+
+            $requiredFields = ['id', 'usuario_id', 'monto', 'banco_id', 'canal_id'];
         
             foreach ($requiredFields as $field) {
-                if (!isset($requestData[$field])) {
-                    http_response_code(400);
-                    echo json_encode(array("message" => "Todos los campos son requeridos."));
-                    return;
+                if (!isset($data[$field])) {
+                    throw new Exception("Todos los campos son requeridos.", 400);
                 }
             }
     
             $result = $this->recargaModel->update(
-                $requestData['id'],
-                $requestData['usuario_id'],
-                $requestData['player_id'],
-                $requestData['monto'],
-                $requestData['banco_id'],
-                $requestData['canal_id'],
-                $requestData['foto_voucher']
+                $data['id'],
+                $data['usuario_id'],
+                $data['monto'],
+                $data['banco_id'],
+                $data['canal_id']
             );
 
             Common::handleDatabaseQueryErrors($result);
 
-            $responseObj->message = $result[0]['mensaje'];
-            $responseObj->code = $result[0]['code'];
+            $responseObj->message = $result['msg_info'];
+            $responseObj->code = $result['msg_code'];
             $responseObj->success = TRUE;
 
             $status = 200;
