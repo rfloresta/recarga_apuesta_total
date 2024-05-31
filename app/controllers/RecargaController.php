@@ -40,14 +40,6 @@ class RecargaController extends Controller{
         try {
             // Obtener el JSON del cuerpo de la solicitud
             $data = $this->decodeJsonBody();
-
-            // Verificar si la decodificación fue exitosa
-            if ($data === null) {
-                // JSON inválido
-                http_response_code(400); // Bad Request
-                echo json_encode(['error' => 'JSON inválido']);
-                exit;
-            }
             
             $requiredFields = ['usuario_id', 'player_id', 'monto', 'banco_id', 'canal_id', 'foto_voucher'];
         
@@ -76,7 +68,6 @@ class RecargaController extends Controller{
 
         } catch (\Throwable $th) {
             $responseObj->message = "Error en nuestros servicios";
-            $responseObj->message = $th->getMessage();
             $status = Common::validateHttpCode(intval($th->getCode()));
         }
 
@@ -118,7 +109,6 @@ class RecargaController extends Controller{
 
         } catch (\Throwable $th) {
             $responseObj->message = "Error en nuestros servicios";
-            $responseObj->message = $th->getMessage();
             $status = Common::validateHttpCode(intval($th->getCode()));
         }
 

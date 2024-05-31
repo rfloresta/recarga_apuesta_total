@@ -19,6 +19,7 @@ class Database {
         $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
+    // Instanciar solo una vez
     public static function getInstance(): self {
         if (!self::$instance) {
             // Crear una nueva instancia utilizando el constructor público

@@ -3,7 +3,8 @@
 namespace App\Controllers;
 
 use stdClass;
-class Controller{
+
+class Controller {
     public function index(){
         include BASE_PATH . '/app/routes.php';
     }
@@ -14,7 +15,17 @@ class Controller{
      * @return mixed Los datos decodificados del cuerpo de la solicitud POST.
      */
     protected function decodeJsonBody() {
-        return json_decode(file_get_contents("php://input"), true);
+
+        $data = json_decode(file_get_contents("php://input"), true);
+        // Verificar si la decodificación fue exitosa
+        if ($data === null) {
+            // JSON inválido
+            http_response_code(400); // Bad Request
+            echo json_encode(['error' => 'JSON inválido']);
+            exit;
+        }
+
+        return $data;
     }
 
     /**
