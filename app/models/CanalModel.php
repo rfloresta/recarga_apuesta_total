@@ -5,7 +5,7 @@ namespace App\Models;
 use PDO;
 use App\Config\Database;
 
-class ClienteModel {
+class CanalModel {
     private $db;
 
     public function __construct() {
@@ -13,8 +13,8 @@ class ClienteModel {
         $this->db = $instance->getConnection();
     }
 
-    public function all() {
-        $stmt = $this->db->prepare('call ConsultarRecargasPorPlayerID()');
+    public function listar_canales_comunicacion() {
+        $stmt = $this->db->prepare('call listar_canales_comunicacion()');
         $stmt->execute();
 
         // Obtener los resultados
