@@ -14,11 +14,11 @@ class RecargaController extends Controller{
         $this->recargaModel = new RecargaModel();
     }
 
-    public function getHistorial(int $player_id) {
+    public function findAllByPlayerID(int $player_id) {
         $responseObj =  Common::buildObjResponse();
 
         try {
-            $result = $this->recargaModel->getHistorial($player_id);
+            $result = $this->recargaModel->consultar_recargas_por_player_id($player_id);
             Common::handleDatabaseQueryErrors($result);
             if(count($result) == 0){
                 throw new Exception("No se encontraron datos", 400);
@@ -49,7 +49,7 @@ class RecargaController extends Controller{
                 exit;
             }
             
-            $requiredFields = [ 'usuario_id', 'player_id', 'monto', 'banco_id', 'canal_id', 'foto_voucher'];
+            $requiredFields = ['usuario_id', 'player_id', 'monto', 'banco_id', 'canal_id', 'foto_voucher'];
         
             foreach ($requiredFields as $field) {
                 if (!isset($data[$field])) {
@@ -57,7 +57,7 @@ class RecargaController extends Controller{
                 }
             }
     
-            $result = $this->recargaModel->create(
+            $result = $this->recargaModel->realizar_recarga(
                 $data['usuario_id'],
                 $data['player_id'],
                 $data['monto'],
@@ -68,8 +68,8 @@ class RecargaController extends Controller{
 
             Common::handleDatabaseQueryErrors($result);
 
-            $responseObj->message = $result['msg_info'];
-            $responseObj->code = $result['msg_code'];
+            $responseObj->message = $result[0]['msg_info'];
+            $responseObj->code = $result[0]['msg_code'];
             $responseObj->success = TRUE;
 
             $status = 201;
@@ -100,7 +100,7 @@ class RecargaController extends Controller{
                 }
             }
     
-            $result = $this->recargaModel->update(
+            $result = $this->recargaModel->actualizar_recarga(
                 $data['id'],
                 $data['usuario_id'],
                 $data['monto'],
@@ -110,8 +110,8 @@ class RecargaController extends Controller{
 
             Common::handleDatabaseQueryErrors($result);
 
-            $responseObj->message = $result['msg_info'];
-            $responseObj->code = $result['msg_code'];
+            $responseObj->message = $result[0]['msg_info'];
+            $responseObj->code = $result[0]['msg_code'];
             $responseObj->success = TRUE;
 
             $status = 200;

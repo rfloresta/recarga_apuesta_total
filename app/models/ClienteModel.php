@@ -13,8 +13,9 @@ class ClienteModel {
         $this->db = $instance->getConnection();
     }
 
-    public function all() {
-        $stmt = $this->db->prepare('call ConsultarRecargasPorPlayerID()');
+    public function consultar_cliente_por_player_id(int $playerID): Array {
+        $stmt = $this->db->prepare('call consultar_cliente_por_player_id(?)');
+        $stmt->bindParam(1, $playerID, PDO::PARAM_INT);
         $stmt->execute();
 
         // Obtener los resultados
@@ -23,5 +24,6 @@ class ClienteModel {
         // Mostrar los resultados
         return $results;
     }
+
 
 }

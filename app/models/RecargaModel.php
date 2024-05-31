@@ -13,9 +13,9 @@ class RecargaModel {
         $this->db = $instance->getConnection();
     }
 
-    public function getHistorial($recargaId) {
-        $stmt = $this->db->prepare('call ConsultarRecargasPorPlayerID(?)');
-        $stmt->bindParam(1, $recargaId, PDO::PARAM_INT);
+    public function consultar_recargas_por_player_id(int $playerID): Array {
+        $stmt = $this->db->prepare('call consultar_recargas_por_player_id(?)');
+        $stmt->bindParam(1, $playerID, PDO::PARAM_INT);
         $stmt->execute();
 
         // Obtener los resultados
@@ -25,8 +25,8 @@ class RecargaModel {
         return $results;
     }
 
-    public function create($usuarioId, $playerId, $monto, $bancoId, $canalId, $fotoVoucher) {
-        $stmt = $this->db->prepare('CALL RealizarRecarga(?, ?, ?, ?, ?, ?)');
+    public function realizar_recarga(int $usuarioId, int $playerId, float $monto, int $bancoId, int $canalId, string $fotoVoucher): Array {
+        $stmt = $this->db->prepare('CALL realizar_recarga(?, ?, ?, ?, ?, ?)');
         $stmt->bindParam(1, $usuarioId, PDO::PARAM_INT);
         $stmt->bindParam(2, $playerId, PDO::PARAM_INT);
         $stmt->bindParam(3, $monto, PDO::PARAM_STR);
@@ -40,11 +40,11 @@ class RecargaModel {
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Mostrar los resultados
-        return $results[0];
+        return $results;
     }
 
-    public function update($id, $usuarioId, $nuevoMonto, $nuevoBancoID, $nuevoCanalID) {
-        $stmt = $this->db->prepare('CALL ActualizarRecarga(?, ?, ?, ?, ?)');
+    public function actualizar_recarga(int $id, int $usuarioId, float $nuevoMonto, int $nuevoBancoID, int $nuevoCanalID): Array {
+        $stmt = $this->db->prepare('CALL actualizar_recarga(?, ?, ?, ?, ?)');
         $stmt->bindParam(1, $id, PDO::PARAM_INT);
         $stmt->bindParam(2, $usuarioId, PDO::PARAM_INT);
         $stmt->bindParam(3, $nuevoMonto, PDO::PARAM_STR);
@@ -57,6 +57,6 @@ class RecargaModel {
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Mostrar los resultados
-        return $results[0];
+        return $results;
     }
 }
