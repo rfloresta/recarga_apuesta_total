@@ -1,5 +1,3 @@
-DROP DATABASE apuesta_total;
-
 -- Crear la base de datos
 CREATE DATABASE IF NOT EXISTS apuesta_total;
 
@@ -10,7 +8,7 @@ USE apuesta_total;
 -- Creacion de tablas
 -- -------------------------------------------------------
 	CREATE TABLE clientes(
-	    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+	    id INT AUTO_INCREMENT PRIMARY KEY,
 	    player_id VARCHAR(50) NOT NULL,
 	    nombres VARCHAR(100) NOT NULL,
 	    apellidos VARCHAR(100) NOT NULL,
@@ -29,7 +27,7 @@ USE apuesta_total;
 	
 	-- Tabla de usuarios (usuarios)
 	CREATE TABLE usuarios (
-	    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+	    id INT AUTO_INCREMENT PRIMARY KEY,
 	    nombre_usuario VARCHAR(100) NOT NULL,
 	    clave VARCHAR(100) NOT NULL,
 	    rol_id SMALLINT,
@@ -53,12 +51,12 @@ USE apuesta_total;
 	
 	
 	CREATE TABLE recargas (
-	    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+	    id INT AUTO_INCREMENT PRIMARY KEY,
 	    monto DECIMAL(10, 2) NOT NULL,
 	    fecha_hora DATETIME NOT NULL,
 	    foto_voucher VARCHAR(150),
-	    cliente_id BIGINT,
-	    usuario_id BIGINT,
+	    cliente_id INT,
+	    usuario_id INT,
 	    banco_id SMALLINT,
 	    canal_id SMALLINT,
 	    FOREIGN KEY (cliente_id) REFERENCES clientes(id),
@@ -74,7 +72,7 @@ USE apuesta_total;
 	    tabla_afectada VARCHAR(100) NOT NULL,
 	    operacion VARCHAR(10) NOT NULL,
 	    fecha_hora DATETIME NOT NULL,
-	    usuario_id BIGINT, -- El usuario que realizó la operación
+	    usuario_id INT, -- El usuario que realizó la operación
 	    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 	);
 
@@ -89,7 +87,8 @@ USE apuesta_total;
    
 	-- Insert tabla clientes
     INSERT INTO clientes (player_id, nombres, apellidos)
-    VALUES ('123456', 'Juan', 'Perez');
+    VALUES ('123456', 'Juan', 'Perez'),
+	 			('199999', 'Carla', 'Paredes');
    
 	-- Insert tabla usuarios
     INSERT INTO usuarios (nombre_usuario, clave, rol_id)
@@ -115,39 +114,42 @@ USE apuesta_total;
 DELIMITER  //
 
 CREATE PROCEDURE realizar_recarga(
-    IN p_UsuarioID BIGINT,
-    IN p_PlayerID BIGINT,
+    IN p_UsuarioID INT,
+    IN p_PlayerID INT,
     IN p_Monto DECIMAL(10, 2),
     IN p_BancoID SMALLINT,
     IN p_CanalID SMALLINT,
     IN p_FotoVoucher VARCHAR(150)
 )
 BEGIN
-	-- Variable para almacenar el ID del cliente
-	DECLARE v_ClienteID BIGINT;
-	   
-    -- Verificar que el nuevo monto no sea menor que cero
-   IF p_Monto <= 0 THEN
-        SELECT 'El monto de la recarga debe ser mayor a cero.' AS msg_info, -1 AS msg_code;
-   ELSE
-	
-	   -- Obtener el ID del cliente por el PlayerID
-	   SELECT id INTO v_ClienteID FROM clientes WHERE player_id = p_PlayerID;
+    -- Variable para almacenar el ID del cliente
+    DECLARE v_ClienteID INT;
 
-	   -- Realizar la recarga
-	   INSERT INTO recargas (monto, fecha_hora, foto_voucher, cliente_id, usuario_id, banco_id, canal_id)
-	   VALUES (p_Monto, NOW(), p_FotoVoucher,  v_ClienteID, p_UsuarioID, p_BancoID, p_CanalID);
-	    
-	   -- Registrar la operación en el log de auditoría
-	   INSERT INTO auditoria_logs (tabla_afectada, operacion, fecha_hora, usuario_id)
-	   VALUES ('recargas', 'INSERT', NOW(), p_UsuarioID);
-	    
-	   -- Actualizar el saldo del cliente
-	   UPDATE clientes SET saldo = saldo + p_Monto WHERE id =  v_ClienteID;
-	   
-    	SELECT 'Recarga realizada exitosamente.' AS msg_info, 1 AS msg_code;
-    	
-   END IF;
+    -- Verificar que el nuevo monto no sea menor que cero
+    IF p_Monto <= 0 THEN
+        SELECT 'El monto de la recarga debe ser mayor a cero.' AS msg_info, -1 AS msg_code;
+    ELSE
+        -- Verificar que el player_id exista
+        SELECT id INTO v_ClienteID FROM clientes WHERE player_id = p_PlayerID;
+        
+        -- Si el player_id no existe, devolver un mensaje de error
+        IF v_ClienteID IS NULL THEN
+            SELECT 'El Cliente no existe.' AS msg_info, -1 AS msg_code;
+        ELSE
+            -- Realizar la recarga
+            INSERT INTO recargas (monto, fecha_hora, foto_voucher, cliente_id, usuario_id, banco_id, canal_id)
+            VALUES (p_Monto, NOW(), p_FotoVoucher,  v_ClienteID, p_UsuarioID, p_BancoID, p_CanalID);
+            
+            -- Registrar la operación en el log de auditoría
+            INSERT INTO auditoria_logs (tabla_afectada, operacion, fecha_hora, usuario_id)
+            VALUES ('recargas', 'INSERT', NOW(), p_UsuarioID);
+            
+            -- Actualizar el saldo del cliente
+            UPDATE clientes SET saldo = saldo + p_Monto WHERE id =  v_ClienteID;
+            
+            SELECT 'Recarga realizada exitosamente.' AS msg_info, 1 AS msg_code;
+        END IF;
+    END IF;
 END //
 
 DELIMITER  ;
@@ -155,8 +157,8 @@ DELIMITER  ;
 DELIMITER //
 
 CREATE PROCEDURE actualizar_recarga(
-	IN p_RecargaID BIGINT,
-   IN p_NuevoUsuarioID BIGINT,
+	IN p_RecargaID INT,
+   IN p_NuevoUsuarioID INT,
    IN p_NuevoMonto DECIMAL(10, 2),
    IN p_NuevoBancoID SMALLINT,
    IN p_NuevoCanalID SMALLINT
@@ -165,7 +167,7 @@ BEGIN
 	DECLARE v_SaldoActual DECIMAL(10, 2);
 	DECLARE v_Diferencia DECIMAL(10, 2);
    DECLARE v_RecargaExiste INT;
-   DECLARE v_ClienteID BIGINT;
+   DECLARE v_ClienteID INT;
 
    -- Verificar que el nuevo monto sea mayor que cero
    IF p_NuevoMonto <= 0 THEN
@@ -226,13 +228,14 @@ END //
 
 DELIMITER ;
 
+
 DELIMITER //
 CREATE PROCEDURE consultar_recargas_por_player_id(
     IN p_PlayerID VARCHAR(50)
 )
 BEGIN
     -- Variable para almacenar el ID del cliente
-    DECLARE v_ClienteID BIGINT;
+    DECLARE v_ClienteID INT;
 
     -- Obtener el ID del cliente por el PlayerID
     SELECT id INTO v_ClienteID FROM clientes WHERE player_id = p_PlayerID;
@@ -240,7 +243,8 @@ BEGIN
     -- Verificar si se encontró el cliente
     IF v_ClienteID IS NOT NULL THEN
         -- Consultar las recargas del cliente
-        SELECT r.id AS recarga_id, r.monto AS monto, r.fecha_hora AS fecha_hora, b.descripcion AS banco, c.nombre AS canal
+        SELECT r.id AS recarga_id, r.monto AS monto, r.fecha_hora AS fecha_hora, 
+		  			b.descripcion AS banco, c.nombre AS canal, banco_id, canal_id
         FROM recargas r
         INNER JOIN bancos b ON r.banco_id = b.id
         INNER JOIN canales_comunicacion c ON r.canal_id = c.id
@@ -253,6 +257,21 @@ END //
 
 DELIMITER ;
 
+
+DELIMITER //
+
+CREATE PROCEDURE consultar_cliente_por_player_id(
+	IN p_PlayerID VARCHAR(50)
+)
+BEGIN
+    SELECT id, nombres, apellidos, saldo
+    FROM clientes
+	 WHERE player_id = p_PlayerID;
+END //
+
+DELIMITER ;
+
+
 DELIMITER //
 
 CREATE PROCEDURE listar_bancos()
@@ -263,6 +282,7 @@ BEGIN
 END //
 
 DELIMITER ;
+
 
 DELIMITER //
 
