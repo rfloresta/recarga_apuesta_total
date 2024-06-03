@@ -10,10 +10,10 @@ class Database {
 
     // Cambiar el modificador de acceso del constructor a private
     private function __construct() {
-        $host = $ENV->get('DB_HOST');
-        $dbname = $ENV->get('DB_NAME');
-        $username = $ENV->get('DB_USER');
-        $password = $ENV->get('DB_PASS');
+        $host = ENV->get('DB_HOST');
+        $dbname = ENV->get('DB_NAME');
+        $username = ENV->get('DB_USER');
+        $password = ENV->get('DB_PASS');
 
         $this->conn = new PDO("mysql:host={$host};dbname={$dbname}", $username, $password);
         $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

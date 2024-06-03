@@ -10,7 +10,7 @@ use App\Controllers\Controller;
 
 // Carga las variables de entorno
 $environment = Environment::load(BASE_PATH . '/.env');
-define('$ENV', $environment);
+define('ENV', $environment);
 
 // Cargamos las rutas
 $controller = new Controller();
