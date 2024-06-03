@@ -39,7 +39,6 @@ class RecargaModel {
         // Obtener los resultados
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Mostrar los resultados
         return $results;
     }
 
@@ -56,7 +55,6 @@ class RecargaModel {
         // Obtener los resultados
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Mostrar los resultados
         return $results;
     }
 }

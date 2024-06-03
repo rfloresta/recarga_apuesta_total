@@ -1,6 +1,6 @@
 <?php
 
-// use Config;
+namespace App\Config;
 
 class Environment {
     private $variables = [];
@@ -14,10 +14,8 @@ class Environment {
     {
         return $this->variables[$key] ?? $default;
     }
-}
 
-class EnvironmentLoader {
-    public static function load(string $path): Environment
+    public static function load(string $path)
     {
         if (file_exists($path)) {
             $envContent = file_get_contents($path);
@@ -34,11 +32,13 @@ class EnvironmentLoader {
                 }
             }            
 
-            // Crear una instancia de Environment con las variables cargadas
-            return new Environment($envVariables);
+            // Aca llama al contructor de esta clase
+            return new self($envVariables);
+            
         } else {
             throw new \Exception('El archivo .env no existe');
         }
 
     }
+    
 }
