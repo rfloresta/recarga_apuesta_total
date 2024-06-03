@@ -11,8 +11,8 @@ class Controller {
      *
      * @return void
      */
-    public function index(){
-        include BASE_PATH . '/app/routes.php';
+    public static function index(){
+        include BASE_PATH . '/app/Routes/api.php';
     }
 
     /**

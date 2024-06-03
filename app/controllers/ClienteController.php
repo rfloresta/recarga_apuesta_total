@@ -3,7 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\ClienteModel;
-use App\Utils\Common;
+use App\Helpers\Common;
 use PDO;
 use Exception;
 
