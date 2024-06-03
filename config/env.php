@@ -6,19 +6,19 @@ class Environment {
     private $variables = [];
 
     public function __construct(array $variables)
- {
+    {
         $this->variables = $variables;
     }
 
     public function get(string $key, $default = null)
- {
-        return $this->variables[ $key ] ?? $default;
+    {
+        return $this->variables[$key] ?? $default;
     }
 }
 
 class EnvironmentLoader {
     public static function load(string $path): Environment
- {
+    {
         if (file_exists($path)) {
             $envContent = file_get_contents($path);
             $envVariables = [];

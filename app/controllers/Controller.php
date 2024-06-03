@@ -5,6 +5,12 @@ namespace App\Controllers;
 use stdClass;
 
 class Controller {
+
+    /**
+     * Incluye las rutas de la aplicación.
+     *
+     * @return void
+     */
     public function index(){
         include BASE_PATH . '/app/routes.php';
     }
@@ -32,7 +38,7 @@ class Controller {
     * Crea la respuesta de los servicios.
     *
     * @param stdClass $data Los datos a ser codificados como JSON.
-    * @param int $status El código de estado HTTP de la respuesta.
+    * @param int $status El código de estado de la respuesta.
     * @return void
     */
     public static function response(stdClass $data, int $status): void {
